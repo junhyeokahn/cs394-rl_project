@@ -94,7 +94,7 @@ class Learner:
             sys.stdout.write('\rPopulating replay memory up to batch_size samples...')
             sys.stdout.flush()
 
-        t = trange(self.start_step+1, train_params.NUM_STEPS_TRAIN+1, desc='ML')
+        t = trange(self.start_step+1, train_params.NUM_STEPS_TRAIN+1, desc='[Train]')
         for train_step in t:
             # Get minibatch
             minibatch = self.PER_memory.sample(train_params.BATCH_SIZE, priority_beta)
@@ -174,11 +174,9 @@ class Learner:
                     self.run_agent_event.set()
 
             if train_step % train_params.PRINTOUT_STEP == 0:
-                t.set_description('ML (loss=%g)' % total_loss)
+                t.set_description('[Train] loss={0:.4f}, avg_return={1:.2f}'.format(total_loss, avg_return))
 
             if train_step % train_params.EVALUATE_SAVE_MODEL_STEP == 0:
-                ## TODO : compare time of model.save vs model.save_weights
-                __import__('ipdb').set_trace()
                 self.actor_net.save_weights(train_params.LOG_DIR + '/eval/actor_%d' % train_step)
                 self.critic_net.save_weights(train_params.LOG_DIR + '/eval/critic_%d' % train_step)
                 avg_return = compute_avg_return(self.eval_env, self.actor_net, train_params.MAX_EP_LENGTH)
