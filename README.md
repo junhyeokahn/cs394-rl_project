@@ -4,7 +4,8 @@ Final project for CS394R: Implementation for D4PG Algorithm.
 ## Run the Code
 
 ### Install requirements
+- run ```pip install tensorflow``` or ```pip install tensorflow-gpu```
 - run ```pip install -r requirements.txt```
 
 ### Training the agent
-- run ```python train.py```
+- run ```python train_eval.py```
