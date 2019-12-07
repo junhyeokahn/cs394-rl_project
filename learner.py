@@ -15,7 +15,7 @@ from params import train_params
 from utils.env_wrapper import PendulumWrapper, LunarLanderContinuousWrapper, BipedalWalkerWrapper
 from utils.network import Actor, Critic
 from utils.l2_projection import _l2_project
-from utils.misc_utils import compute_avg_return
+from utils.misc_utils import compute_avg_return, scalar_summary
 
 class Learner:
     def __init__(self, PER_memory, run_agent_event, stop_agent_event):
@@ -33,6 +33,8 @@ class Learner:
             self.eval_env = BipedalWalkerWrapper(hardcore=True)
         else:
             raise Exception('Chosen environment does not have an environment wrapper defined. Please choose an environment with an environment wrapper defined, or create a wrapper for this environment in utils.env_wrapper.py')
+
+        self.summary_writer = tf.summary.create_file_writer(train_params.LOG_DIR + '/eval/')
 
 
     def build_network(self):
@@ -78,6 +80,7 @@ class Learner:
         beta_increment = (train_params.PRIORITY_BETA_END - train_params.PRIORITY_BETA_START) / train_params.NUM_STEPS_TRAIN
 
         avg_return = compute_avg_return(self.eval_env, self.actor_net, train_params.MAX_EP_LENGTH)
+        scalar_summary(self.summary_writer, "Average Return", avg_return, step=1)
 
         # Can only train when we have at least batch_size num of samples in replay memory
         while len(self.PER_memory) <= train_params.BATCH_SIZE:
@@ -150,7 +153,7 @@ class Learner:
                 self.actor_net.save_weights(train_params.LOG_DIR + '/eval/actor_%d' % train_step)
                 self.critic_net.save_weights(train_params.LOG_DIR + '/eval/critic_%d' % train_step)
                 avg_return = compute_avg_return(self.eval_env, self.actor_net, train_params.MAX_EP_LENGTH)
-                # print('[Evaluation]: Average return at training step {} is {}'.format(train_step, avg_return))
+                scalar_summary(self.summary_writer, "Average Return", avg_return, step=train_step)
 
         # Stop the agents
         self.stop_agent_event.set()

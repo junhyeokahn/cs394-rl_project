@@ -1,6 +1,7 @@
 import glob
 import os
 import numpy as np
+import tensorflow as tf
 
 def get_latest_run_id(save_path, dir_name):
     """
@@ -49,3 +50,8 @@ def compute_avg_return(environment, policy, max_epi_len=10000, num_episodes=5):
             ep_done = True  
   mean_ep_reward = np.mean(rewards)
   return mean_ep_reward
+
+def scalar_summary(writer, name, value, step):
+    with writer.as_default():
+        tf.summary.scalar(name, value, step=step)
+    writer.flush()

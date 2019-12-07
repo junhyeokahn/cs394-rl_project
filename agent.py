@@ -16,6 +16,7 @@ import imageio
 from params import train_params
 from utils.network import Actor
 from utils.env_wrapper import PendulumWrapper, LunarLanderContinuousWrapper, BipedalWalkerWrapper
+from utils.misc_utils import scalar_summary
 
 class Agent:
 
@@ -120,9 +121,7 @@ class Agent:
 
                 if terminal or num_steps == train_params.MAX_EP_LENGTH:
                     # Log total episode reward
-                    with self.summary_writer.as_default():
-                        tf.summary.scalar("Episode Reward", episode_reward, step=num_eps)
-                    self.summary_writer.flush()
+                    scalar_summary(self.summary_writer, 'Episode Return', episode_reward, step=num_eps)
                     # Compute Bellman rewards and add experiences to replay memory for the last N-1 experiences still remaining in the experience buffer
                     while len(self.exp_buffer) != 0:
                         state_0, action_0, reward_0 = self.exp_buffer.popleft()
