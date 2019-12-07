@@ -124,7 +124,8 @@ class Agent:
 
                 if terminal or num_steps == train_params.MAX_EP_LENGTH:
                     # Log total episode reward
-                    tf.summary.scalar("Episode Reward", episode_reward, step=num_eps)
+                    with self.summary_writer.as_default():
+                        tf.summary.scalar("Episode Reward", episode_reward, step=num_eps)
                     self.summary_writer.flush()
                     # Compute Bellman rewards and add experiences to replay memory for the last N-1 experiences still remaining in the experience buffer
                     while len(self.exp_buffer) != 0:
