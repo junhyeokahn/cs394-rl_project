@@ -42,7 +42,7 @@ def train():
     # Initialise variables (either from ckpt file if given, or from random)
     learner.initialise_vars()
     # Get learner policy (actor) network params - agent needs these to copy latest policy params periodically
-    learner_policy_params = learner.actor_net_params # TODO : consider batch later
+    learner_policy_params = learner.actor_net.trainable_variables# TODO : consider batch later
 
     threads.append(threading.Thread(target=learner.run))
 

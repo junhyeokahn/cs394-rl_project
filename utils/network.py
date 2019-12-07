@@ -10,6 +10,9 @@ import numpy as np
 
 from tensorflow.keras.layers import Dense
 
+from params import train_params
+from utils.l2_projection import _l2_project
+
 class Critic(tf.keras.Model):
 
     def __init__(self, state_dims, action_dims, dense1_size, dense2_size, final_layer_init, num_atoms, v_min, v_max, name='critic'):
@@ -39,9 +42,12 @@ class Critic(tf.keras.Model):
 
         self.z_atoms = tf.linspace(v_min, v_max, num_atoms)
 
+        self.optimizer = tf.keras.optimizers.Adam(train_params.CRITIC_LEARNING_RATE)
+
         with tf.device("/cpu:0"):
             self(tf.constant(np.zeros(shape=(1,)+(state_dims,), dtype=np.float32)), tf.constant(np.zeros(shape=(1,)+(action_dims,), dtype=np.float32)))
 
+    @tf.function
     def call(self, state, action):
         d1 = self.dense1(state)
         d2a = self.dense2a(d1)
@@ -50,6 +56,32 @@ class Critic(tf.keras.Model):
         output_logits = self.dense3(d2)
         output_probs = tf.nn.softmax(output_logits)
         return output_logits, output_probs
+
+    @tf.function
+    def train(self, states_batch, actions_batch, target_Z_atoms, target_Z_dist, weights_batch):
+        with tf.GradientTape(watch_accessed_variables=False) as g:
+            g.watch(self.trainable_variables)
+            output_logits, _ = self.call(states_batch, actions_batch)
+            target_Z_projected = _l2_project(target_Z_atoms, target_Z_dist, self.z_atoms)
+            td_error = tf.nn.softmax_cross_entropy_with_logits(logits=output_logits, labels=tf.stop_gradient(target_Z_projected))
+            weighted_loss = td_error * weights_batch
+            mean_loss = tf.reduce_mean(weighted_loss)
+            l2_reg_loss = tf.add_n([tf.nn.l2_loss(v) for v in self.trainable_variables if 'kernel' in v.name]) * train_params.CRITIC_L2_LAMBDA
+            total_loss = mean_loss + l2_reg_loss
+        critic_grads = g.gradient(total_loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(critic_grads, self.trainable_variables))
+        return td_error, total_loss
+
+    @tf.function
+    def get_action_grads(self, states_batch, actor_actions):
+        # Compute gradients of critic's value output distribution wrt actions
+        with tf.GradientTape() as g:
+            g.watch(actor_actions)
+            _, output_probs = self.call(states_batch, actor_actions)
+        expanded_atoms = np.repeat(np.expand_dims(self.z_atoms, axis=0), train_params.BATCH_SIZE, axis=0)
+        action_grads = g.gradient(output_probs, actor_actions, expanded_atoms)
+        return action_grads
+
 
 class Actor(tf.keras.Model):
 
@@ -76,16 +108,29 @@ class Actor(tf.keras.Model):
 
         # self.dense3 = Dense(action_dims, activation=tf.keras.activations.tanh, kernel_initializer=tf.random_uniform_initializer(1, 1), bias_initializer=tf.random_uniform_initializer(1, 1), name='D3')
 
+        self.optimizer = tf.keras.optimizers.Adam(train_params.CRITIC_LEARNING_RATE)
+
         # this initialize the weights
         with tf.device("/cpu:0"):
             self(tf.constant(np.zeros(shape=(1,)+(state_dims,), dtype=np.float32)))
 
+    @tf.function
     def call(self, state):
         d1 = self.dense1(state)
         d2 = self.dense2(d1)
         d3 = self.dense3(d2)
         output = tf.multiply(0.5, tf.multiply(d3, (self.action_bound_high-self.action_bound_low)) + (self.action_bound_high+self.action_bound_low))
         return output
+
+    @tf.function
+    def train(self, states_batch, action_grads):
+        with tf.GradientTape(watch_accessed_variables=False) as g:
+            g.watch(self.trainable_variables)
+            actor_actions = self.call(states_batch)
+        actor_grads = g.gradient(actor_actions, self.trainable_variables, -action_grads)
+        actor_grads_scaled = list(map(lambda x: tf.divide(x, train_params.BATCH_SIZE), actor_grads))
+        self.optimizer.apply_gradients(zip(actor_grads_scaled, self.trainable_variables))
+        return None
 
 '''
 class Critic_BN:

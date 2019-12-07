@@ -23,9 +23,6 @@ class Learner:
         self.run_agent_event = run_agent_event
         self.stop_agent_event = stop_agent_event
 
-        self.critic_optimizer = tf.keras.optimizers.Adam(train_params.CRITIC_LEARNING_RATE)
-        self.actor_optimizer = tf.keras.optimizers.Adam(train_params.ACTOR_LEARNING_RATE)
-
         if train_params.ENV == 'Pendulum-v0':
             self.eval_env = PendulumWrapper()
         elif train_params.ENV == 'LunarLanderContinuous-v2':
@@ -46,9 +43,7 @@ class Learner:
             # self.critic_target_net = Critic_BN(self.state_ph, self.action_ph, train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, is_training=True, scope='learner_critic_target')
         else:
             self.critic_net = Critic(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, name='critic')
-            self.critic_net_params = self.critic_net.trainable_variables
             self.critic_target_net = Critic(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, name='critic_target')
-            self.critic_target_net_params = self.critic_target_net.trainable_variables
 
         # Create policy (actor) network + target network
         if train_params.USE_BATCH_NORM:
@@ -57,13 +52,11 @@ class Learner:
             # self.actor_target_net = Actor_BN(self.state_ph, train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, is_training=True, scope='learner_actor_target')
         else:
             self.actor_net = Actor(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name='actor')
-            self.actor_net_params = self.actor_net.trainable_variables
             self.actor_target_net = Actor(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name='actor_target')
-            self.actor_target_net_params = self.actor_target_net.trainable_variables
 
     def target_network_update(self, tau):
-        network_params = self.actor_net_params + self.critic_net_params
-        target_network_params = self.actor_target_net_params + self.critic_target_net_params
+        network_params = self.actor_net.trainable_variables + self.critic_net.trainable_variables
+        target_network_params = self.actor_target_net.trainable_variables + self.critic_target_net.trainable_variables
         for from_var,to_var in zip(network_params, target_network_params):
             to_var.assign((tf.multiply(from_var, tau) + tf.multiply(to_var, 1. - tau)))
 
@@ -77,7 +70,6 @@ class Learner:
             # Perform hard copy (tau=1.0) of initial params to target networks
             self.target_network_update(1.0)
 
-    # @tf.function
     def run(self):
         # Sample batches of experiences from replay memory and train learner networks
 
@@ -121,17 +113,7 @@ class Learner:
             # Apply Bellman update to each atom
             target_Z_atoms = np.expand_dims(rewards_batch, axis=1) + (target_Z_atoms*np.expand_dims(gammas_batch, axis=1))
             # Train critic
-            with tf.GradientTape(watch_accessed_variables=False) as g:
-                g.watch(self.critic_net_params)
-                output_logits, _ = self.critic_net(states_batch, actions_batch)
-                target_Z_projected = _l2_project(target_Z_atoms, target_Z_dist, self.critic_net.z_atoms)
-                td_error = tf.nn.softmax_cross_entropy_with_logits(logits=output_logits, labels=tf.stop_gradient(target_Z_projected))
-                weighted_loss = td_error * weights_batch
-                mean_loss = tf.reduce_mean(weighted_loss)
-                l2_reg_loss = tf.add_n([tf.nn.l2_loss(v) for v in self.critic_net_params if 'kernel' in v.name]) * train_params.CRITIC_L2_LAMBDA
-                total_loss = mean_loss + l2_reg_loss
-            critic_grads = g.gradient(total_loss, self.critic_net_params)
-            self.critic_optimizer.apply_gradients(zip(critic_grads, self.critic_net_params))
+            td_error, total_loss = self.critic_net.train(states_batch, actions_batch, target_Z_atoms, target_Z_dist, weights_batch)
             # Use critic TD errors to update sample priorities
             # self.PER_memory.update_priorities(idx_batch, (np.abs(td_error.eval(session=tf.compat.v1.Session()))+train_params.PRIORITY_EPSILON))
             self.PER_memory.update_priorities(idx_batch, (np.abs(td_error.numpy())+train_params.PRIORITY_EPSILON))
@@ -141,19 +123,9 @@ class Learner:
             # ==================================================================
             # Get policy network's action outputs for selected states
             actor_actions = self.actor_net(states_batch)
-            # Compute gradients of critic's value output distribution wrt actions
-            with tf.GradientTape() as g:
-                g.watch(actor_actions)
-                _, output_probs = self.critic_net(states_batch, actor_actions)
-            action_grads = g.gradient(output_probs, actor_actions, self.critic_net.z_atoms)
+            action_grads = self.critic_net.get_action_grads(states_batch, actor_actions)
             # Train actor
-            with tf.GradientTape(watch_accessed_variables=False) as g:
-                g.watch(self.actor_net_params)
-                actor_actions = self.actor_net(states_batch)
-            actor_grads = g.gradient(actor_actions, self.actor_net_params, -action_grads)
-            actor_grads_scaled = list(map(lambda x: tf.divide(x, train_params.BATCH_SIZE), actor_grads))
-            self.actor_optimizer.apply_gradients(zip(actor_grads_scaled, self.actor_net_params))
-
+            self.actor_net.train(states_batch, action_grads)
             # Update target networks
             self.target_network_update(train_params.TAU)
 

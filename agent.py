@@ -11,7 +11,6 @@ import tensorflow as tf
 import numpy as np
 import scipy.stats as ss
 from collections import deque
-import cv2
 import imageio
 
 from params import train_params
@@ -20,7 +19,6 @@ from utils.env_wrapper import PendulumWrapper, LunarLanderContinuousWrapper, Bip
 
 class Agent:
 
-    # @tf.function
     def __init__(self, env, seed, learner_policy_params, n_agent=0):
         self.n_agent = n_agent
 
@@ -39,7 +37,6 @@ class Agent:
 
         self.learner_policy_params = learner_policy_params
 
-    # @tf.function
     def build_network(self, training):
 
         name = ('actor_agent_%02d'%self.n_agent)
@@ -52,7 +49,6 @@ class Agent:
             self.actor_net = Actor(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name)
             self.actor_net_params = self.actor_net.trainable_variables
 
-    # @tf.function
     def update_network(self):
         from_vars = self.learner_policy_params
         to_vars = self.actor_net_params
@@ -148,70 +144,3 @@ class Agent:
                 self.update_network()
 
         self.env_wrapper.close()
-
-    def play(self):
-        pass
-        ## TODO
-        '''
-        # Play a saved ckpt of actor network in the environment, visualise performance on screen and save a GIF (optional)
-
-        def load_ckpt(ckpt_dir, ckpt_file):
-            # Load ckpt given by ckpt_file, or else load latest ckpt in ckpt_dir
-            loader = tf.train.Saver()
-            if ckpt_file is not None:
-                ckpt = ckpt_dir + '/' + ckpt_file
-            else:
-                ckpt = tf.train.latest_checkpoint(ckpt_dir)
-
-            loader.restore(self.sess, ckpt)
-            sys.stdout.write('%s restored.\n\n' % ckpt)
-            sys.stdout.flush()
-
-            ckpt_split = ckpt.split('-')
-            self.train_ep = ckpt_split[-1]
-
-        # Load ckpt from ckpt_dir
-        load_ckpt(play_params.CKPT_DIR, play_params.CKPT_FILE)
-
-        # Create record directory
-        if not os.path.exists(play_params.RECORD_DIR):
-            os.makedirs(play_params.RECORD_DIR)
-
-        for ep in range(1, play_params.NUM_EPS_PLAY+1):
-            state = self.env_wrapper.reset()
-            state = self.env_wrapper.normalise_state(state)
-            step = 0
-            ep_done = False
-
-            while not ep_done:
-                frame = self.env_wrapper.render()
-                if play_params.RECORD_DIR is not None:
-                    filepath = play_params.RECORD_DIR + '/Ep%03d_Step%04d.jpg' % (ep, step)
-                    cv2.imwrite(filepath, frame)
-                action = self.sess.run(self.actor_net.output, {self.state_ph:np.expand_dims(state, 0)})[0]     # Add batch dimension to single state input, and remove batch dimension from single action output
-                state, _, terminal = self.env_wrapper.step(action)
-                state = self.env_wrapper.normalise_state(state)
-
-                step += 1
-
-                # Episode can finish either by reaching terminal state or max episode steps
-                if terminal or step == play_params.MAX_EP_LENGTH:
-                    ep_done = True
-
-        # Convert saved frames to gif
-        if play_params.RECORD_DIR is not None:
-            images = []
-            for file in sorted(os.listdir(play_params.RECORD_DIR)):
-                # Load image
-                filename = play_params.RECORD_DIR + '/' + file
-                im = cv2.imread(filename)
-                images.append(im)
-                # Delete static image once loaded
-                os.remove(filename)
-
-            # Save as gif
-            imageio.mimsave(play_params.RECORD_DIR + '/%s.gif' % play_params.ENV, images, duration=0.01)
-
-        self.env_wrapper.close()
-        '''
-
