@@ -22,8 +22,6 @@ class Agent:
 
     # @tf.function
     def __init__(self, env, seed, learner_policy_params, n_agent=0):
-        print("Initialising agent %02d... \n" % n_agent)
-
         self.n_agent = n_agent
 
         # Create environment

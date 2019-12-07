@@ -19,8 +19,6 @@ from utils.misc_utils import compute_avg_return
 
 class Learner:
     def __init__(self, PER_memory, run_agent_event, stop_agent_event):
-        print("Initialising learner... \n\n")
-
         self.PER_memory = PER_memory
         self.run_agent_event = run_agent_event
         self.stop_agent_event = stop_agent_event

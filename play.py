@@ -1,37 +1,79 @@
 '''
 ## Test ##
-# Test a trained D4PG network. This can be run alongside training by running 'run_every_new_ckpt.sh'.
-@author: Mark Sinton (msinto93@gmail.com)
-Modified by: Junhyeok Ahn (junhyeokahn91@utexas.edu) and Mihir Vedantam (vedantam.mihir@utexas.edu)
+# Test a trained D4PG network.
+Written by: Junhyeok Ahn (junhyeokahn91@utexas.edu) and Mihir Vedantam (vedantam.mihir@utexas.edu)
 '''
+import os
 
 import tensorflow as tf
 import numpy as np
+import cv2
+import imageio
 
-from params import play_params
-from agent import Agent
+from utils.env_wrapper import PendulumWrapper, LunarLanderContinuousWrapper, BipedalWalkerWrapper
+from params import train_params, play_params
+from utils.network import Actor, Critic
 
 
 def play():
-    # Set random seeds for reproducability
-    np.random.seed(play_params.RANDOM_SEED)
-    tf.set_random_seed(play_params.RANDOM_SEED)
 
-    # Create session
-    config = tf.ConfigProto(allow_soft_placement=True)
-    config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
+    if play_params.ENV == 'Pendulum-v0':
+        play_env = PendulumWrapper()
+    elif play_params.ENV == 'LunarLanderContinuous-v2':
+        play_env = LunarLanderContinuousWrapper()
+    elif play_params.ENV == 'BipedalWalker-v2':
+        play_env = BipedalWalkerWrapper()
+    elif play_params.ENV == 'BipedalWalkerHardcore-v2':
+        play_env = BipedalWalkerWrapper(hardcore=True)
+    else:
+        raise Exception('Chosen environment does not have an environment wrapper defined. Please choose an environment with an environment wrapper defined, or create a wrapper for this environment in utils.env_wrapper.py')
 
-    # Initialise agent
-    agent = Agent(sess, play_params.ENV, play_params.RANDOM_SEED)
-    # Build network
-    agent.build_network(training=False)
 
-    # Run network in environment
-    agent.play()
+    actor_net = Actor(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name='actor_play')
+    critic_net = Critic(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, name='critic_play')
 
-    sess.close()
+    actor_net.load_weights(play_params.ACTOR_MODEL_DIR)
+    critic_net.load_weights(play_params.CRITIC_MODEL_DIR)
 
+    if not os.path.exists(play_params.RECORD_DIR):
+        os.makedirs(play_params.RECORD_DIR)
+
+    for ep in range(1, play_params.NUM_EPS_PLAY+1):
+        state = play_env.reset()
+        state = play_env.normalise_state(state)
+        step = 0
+        ep_done = False
+
+        while not ep_done:
+            frame = play_env.render()
+            if play_params.RECORD_DIR is not None:
+                filepath = play_params.RECORD_DIR + '/Ep%03d_Step%04d.jpg' % (ep, step)
+                cv2.imwrite(filepath, frame)
+            action = actor_net(np.expand_dims(state.astype(np.float32), 0))[0]
+            state, _, terminal = play_env.step(action)
+            state = play_env.normalise_state(state)
+
+            step += 1
+
+            # Episode can finish either by reaching terminal state or max episode steps
+            if terminal or step == play_params.MAX_EP_LENGTH:
+                ep_done = True
+
+    # Convert saved frames to gif
+    if play_params.RECORD_DIR is not None:
+        images = []
+        for file in sorted(os.listdir(play_params.RECORD_DIR)):
+            # Load image
+            filename = play_params.RECORD_DIR + '/' + file
+            im = cv2.imread(filename)
+            images.append(im)
+            # Delete static image once loaded
+            os.remove(filename)
+
+        # Save as gif
+        imageio.mimsave(play_params.RECORD_DIR + '/%s.gif' % play_params.ENV, images, duration=0.01)
+
+    self.play_env.close()
 
 if  __name__ == '__main__':
     play()

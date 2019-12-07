@@ -61,24 +61,40 @@ class train_params:
     # Files/Directories
     LOG_DIR = get_log_dir(ENV, ALGO)
     PRINTOUT_STEP = 5
-    EVALUATE_SAVE_MODEL_STEP = 5
+    EVALUATE_SAVE_MODEL_STEP = 1000
     INITIAL_ACTOR_MODEL = None
     INITIAL_CRITIC_MODEL = None
 
 class play_params:
+    ALGO = 'D4PG_2'
+    ENV = 'Pendulum-v0'
+    CKPT = '1000'
 
-    # Environment parameters
-    ENV = train_params.ENV                                  # Environment to use (must have low dimensional state space (i.e. not image) and continuous action space)
-    RANDOM_SEED = 999999                                    # Random seed for reproducability
+    # Create dummy environment to get all environment params
+    if ENV == 'Pendulum-v0':
+        dummy_env = PendulumWrapper()
+    elif ENV == 'LunarLanderContinuous-v2':
+        dummy_env = LunarLanderContinuousWrapper()
+    elif ENV == 'BipedalWalker-v2':
+        dummy_env = BipedalWalkerWrapper()
+    elif ENV == 'BipedalWalkerHardcore-v2':
+        dummy_env = BipedalWalkerWrapper(hardcore=True)
+    else:
+        raise Exception('Chosen environment does not have an environment wrapper defined. Please choose an environment with an environment wrapper defined, or create a wrapper for this environment in utils.env_wrapper.py')
+
+    STATE_DIMS = dummy_env.get_state_dims()
+    STATE_BOUND_LOW, STATE_BOUND_HIGH = dummy_env.get_state_bounds()
+    ACTION_DIMS = dummy_env.get_action_dims()
+    ACTION_BOUND_LOW, ACTION_BOUND_HIGH = dummy_env.get_action_bounds()
+    V_MIN = dummy_env.v_min
+    V_MAX = dummy_env.v_max
+    del dummy_env
+
+    import os
+    ACTOR_MODEL_DIR = os.getcwd() + '/data/' + ENV + '/' + ALGO + '/eval/actor_' + CKPT
+    CRITIC_MODEL_DIR = os.getcwd() + '/data/' + ENV + '/' + ALGO + '/eval/critic_' + CKPT
+    RECORD_DIR = os.getcwd() + '/data/' + ENV + '/' + ALGO + '/eval/video_' + CKPT
 
     # Play parameters
     NUM_EPS_PLAY = 5                                        # Number of episodes to play for
     MAX_EP_LENGTH = 10000                                   # Maximum number of steps per episode
-
-    # Files/directories
-    CKPT_DIR = './ckpts/' + ENV                             # Directory for saving/loading checkpoints
-    CKPT_FILE = None                                        # Checkpoint file to load and run (if None, load latest ckpt)
-    RECORD_DIR = './video'                                  # Directory to store recorded gif of gameplay (if None, do not record)
-
-
-

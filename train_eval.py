@@ -47,8 +47,7 @@ def train():
     threads.append(threading.Thread(target=learner.run))
 
 
-    # for n_agent in range(train_params.NUM_AGENTS):
-    for n_agent in range(1):
+    for n_agent in range(train_params.NUM_AGENTS):
         # Initialise agent
         agent = Agent(train_params.ENV, train_params.RANDOM_SEED, learner_policy_params, n_agent)
         # Build network
