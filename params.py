@@ -68,7 +68,7 @@ class train_params:
 class play_params:
     ALGO = 'D4PG_2'
     ENV = 'Pendulum-v0'
-    CKPT = '1000'
+    CKPT = '3000'
 
     # Create dummy environment to get all environment params
     if ENV == 'Pendulum-v0':
