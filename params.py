@@ -9,7 +9,7 @@ class train_params:
     ENV = 'Pendulum-v0'                     # Environment to use (must have low dimensional state space (i.e. not image) and continuous action space)
     RENDER = False                          # Whether or not to display the environment on the screen during training
     RANDOM_SEED = 99999999                  # Random seed for reproducability
-    NUM_AGENTS = 1                          # Number of distributed agents to run simultaneously
+    NUM_AGENTS = 4                          # Number of distributed agents to run simultaneously
 
     # Create dummy environment to get all environment params
     if ENV == 'Pendulum-v0':
