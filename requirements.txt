@@ -15,6 +15,7 @@ grpcio==1.25.0
 gym==0.15.4
 h5py==2.10.0
 idna==2.8
+imageio==2.6.1
 Keras-Applications==1.0.8
 Keras-Preprocessing==1.1.0
 kiwisolver==1.1.0
@@ -24,6 +25,7 @@ numpy==1.17.4
 oauthlib==3.1.0
 opencv-python==4.1.2.30
 opt-einsum==3.1.0
+Pillow==6.2.1
 pkg-resources==0.0.0
 protobuf==3.11.1
 pyasn1==0.4.8
@@ -40,6 +42,7 @@ tensorboard==2.0.2
 tensorflow-estimator==2.0.1
 tensorflow-gpu==2.0.0
 termcolor==1.1.0
+tqdm==4.40.1
 urllib3==1.25.7
 Werkzeug==0.16.0
 wrapt==1.11.2
