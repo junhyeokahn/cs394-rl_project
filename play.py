@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import imageio
+from tqdm import tqdm
 
 from utils.env_wrapper import PendulumWrapper, LunarLanderContinuousWrapper, BipedalWalkerWrapper
 from params import train_params, play_params
@@ -29,8 +30,8 @@ def play():
         raise Exception('Chosen environment does not have an environment wrapper defined. Please choose an environment with an environment wrapper defined, or create a wrapper for this environment in utils.env_wrapper.py')
 
 
-    actor_net = Actor(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.ACTION_BOUND_LOW, train_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name='actor_play')
-    critic_net = Critic(train_params.STATE_DIMS, train_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, name='critic_play')
+    actor_net = Actor(play_params.STATE_DIMS, play_params.ACTION_DIMS, play_params.ACTION_BOUND_LOW, play_params.ACTION_BOUND_HIGH, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, name='actor_play')
+    critic_net = Critic(play_params.STATE_DIMS, play_params.ACTION_DIMS, train_params.DENSE1_SIZE, train_params.DENSE2_SIZE, train_params.FINAL_LAYER_INIT, train_params.NUM_ATOMS, train_params.V_MIN, train_params.V_MAX, name='critic_play')
 
     actor_net.load_weights(play_params.ACTOR_MODEL_DIR)
     critic_net.load_weights(play_params.CRITIC_MODEL_DIR)
@@ -38,7 +39,7 @@ def play():
     if not os.path.exists(play_params.RECORD_DIR):
         os.makedirs(play_params.RECORD_DIR)
 
-    for ep in range(1, play_params.NUM_EPS_PLAY+1):
+    for ep in tqdm(range(1, play_params.NUM_EPS_PLAY+1), desc='playing'):
         state = play_env.reset()
         state = play_env.normalise_state(state)
         step = 0
@@ -60,9 +61,10 @@ def play():
                 ep_done = True
 
     # Convert saved frames to gif
+    exit()
     if play_params.RECORD_DIR is not None:
         images = []
-        for file in sorted(os.listdir(play_params.RECORD_DIR)):
+        for file in tqdm(sorted(os.listdir(play_params.RECORD_DIR)), desc='converting to gif'):
             # Load image
             filename = play_params.RECORD_DIR + '/' + file
             im = cv2.imread(filename)
@@ -71,9 +73,10 @@ def play():
             os.remove(filename)
 
         # Save as gif
-        imageio.mimsave(play_params.RECORD_DIR + '/%s.gif' % play_params.ENV, images, duration=0.01)
+        print("Saving to ", play_params.RECORD_DIR)
+        imageio.mimsave(play_params.RECORD_DIR + '/%s.gif' % play_params.ENV, images[:-1], duration=0.01)
 
-    self.play_env.close()
+    play_env.close()
 
 if  __name__ == '__main__':
     play()

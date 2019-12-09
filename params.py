@@ -6,7 +6,7 @@ class train_params:
     ALGO = 'D4PG'
 
     # Environment parameters
-    ENV = 'Pendulum-v0'                     # Environment to use (must have low dimensional state space (i.e. not image) and continuous action space)
+    ENV = 'BipedalWalker-v2'                     # Environment to use (must have low dimensional state space (i.e. not image) and continuous action space)
     RENDER = False                          # Whether or not to display the environment on the screen during training
     RANDOM_SEED = 99999999                  # Random seed for reproducability
     NUM_AGENTS = 4                          # Number of distributed agents to run simultaneously
@@ -67,8 +67,8 @@ class train_params:
 
 class play_params:
     ALGO = 'D4PG_2'
-    ENV = 'Pendulum-v0'
-    CKPT = '3000'
+    ENV = 'BipedalWalker-v2'
+    CKPT = '99000'
 
     # Create dummy environment to get all environment params
     if ENV == 'Pendulum-v0':
@@ -96,5 +96,5 @@ class play_params:
     RECORD_DIR = os.getcwd() + '/data/' + ENV + '/' + ALGO + '/eval/video_' + CKPT
 
     # Play parameters
-    NUM_EPS_PLAY = 5                                        # Number of episodes to play for
+    NUM_EPS_PLAY = 1                                        # Number of episodes to play for
     MAX_EP_LENGTH = 10000                                   # Maximum number of steps per episode
