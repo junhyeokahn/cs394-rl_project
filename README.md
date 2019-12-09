@@ -17,13 +17,13 @@ Final project for CS394R: Implementation for Distributed [DDPG](https://arxiv.or
 ## Experiment Results
 
 ### Pendulum-v0
-<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/PendulumPlot.png" width="500" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/Pendulum-v0.gif" width="250" height="250">
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/PendulumPlot.png" width="350" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/Pendulum-v0.gif" width="250" height="250">
 
 ### LunarLanderContinuous-v2
-<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunaLandPlot.png" width="500" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunarLanderContinuous-v2.gif" width="250" height="250">
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunaLandPlot.png" width="350" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunarLanderContinuous-v2.gif" width="250" height="250">
 
 ### BipedalWalker-v2
-<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedPlot.png" width="500" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedalWalker-v2.gif" width="250" height="250">
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedPlot.png" width="350" height="250"> <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedalWalker-v2.gif" width="250" height="250">
 
 ## Run the Code Yourself
 
