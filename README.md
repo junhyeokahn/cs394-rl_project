@@ -17,13 +17,12 @@ Final project for CS394R: Implementation for Distributed [DDPG](https://arxiv.or
 ## Experiment Results
 
 ### Pendulum-v0
-![](https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/Pendulum-v0.gif | width=100)
-
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/Pendulum-v0.gif" width="250" height="250">
 ### LunarLanderContinuous-v2
-![](https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunarLanderContinuous-v2.gif | width=100)
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunarLanderContinuous-v2.gif" width="250" height="250">
 
 ### BipedalWalker-v2
-![](https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedalWalker-v2.gif | width=100)
+<img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/BipedalWalker-v2.gif" width="250" height="250">
 
 ## Run the Code Yourself
 
