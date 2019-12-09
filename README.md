@@ -18,6 +18,7 @@ Final project for CS394R: Implementation for Distributed [DDPG](https://arxiv.or
 
 ### Pendulum-v0
 <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/Pendulum-v0.gif" width="250" height="250">
+
 ### LunarLanderContinuous-v2
 <img src="https://github.com/junhyeokahn/cs394-rl_project/blob/master/figures/LunarLanderContinuous-v2.gif" width="250" height="250">
 
